@@ -13,7 +13,6 @@ import random
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from decimal import Decimal # <--- NEW IMPORT: Import Decimal for precise calculations
-
 # Home page view
 def home_view(request):
     return render(request, 'home.html')
