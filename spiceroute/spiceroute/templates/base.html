@@ -132,11 +132,12 @@
                             <a class="nav-link" href="{% url 'vendor_leftovers' %}">Leftovers</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link cart-icon-container" href="{% url 'checkout' %}">
+                            <a class="nav-link cart-icon-container" href="#" onclick="goToCheckout(event)">
                                 <i class="fas fa-shopping-cart"></i> Cart
                                 <span class="cart-count" id="cartCount">0</span>
                             </a>
                         </li>
+
                         {% elif user.is_supplier %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'supplier_dashboard' %}">Dashboard</a>
@@ -195,5 +196,20 @@
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+function goToCheckout(event) {
+    event.preventDefault(); // prevent the <a> from navigating immediately
+
+    const cart = sessionStorage.getItem('spicerouteCart');
+    if (!cart) {
+        alert("Your cart is empty!");
+        return;
+    }
+
+    const encodedCart = encodeURIComponent(cart);
+    window.location.href = `/vendor/checkout/?cart_data=${encodedCart}`;
+}
+</script>
+
 </body>
 </html>
