@@ -18,8 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from . import views
 from django.conf import settings
-from django.conf.urls.static import static
-from django.views.decorators.csrf import csrf_exempt # For API endpoint simplicity in hackathon
+from django.conf.urls.static import static # For API endpoint simplicity in hackathon
 
 
 urlpatterns = [
@@ -55,5 +54,5 @@ urlpatterns = [
     path('api/order-details/<int:order_id>/', views.order_details_api_view, name='order_details_api'),
     path('api/product-details/<int:product_id>/', views.product_details_api_view, name='product_details_api'),
     path('api/update-product-price/<int:product_id>/', views.update_product_price_api_view, name='update_product_price_api'), # NEW
-    path('api/add-ai-suggestion-to-cart/', views.add_ai_suggestion_to_cart_api_view, name='add_ai_suggestion_to_cart_api'), # NEW
+    path('api/add-ai-suggestion-to-cart/', views.add_ai_suggestion_to_cart_api_view, name='add_ai_suggestion_to_cart_api'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
