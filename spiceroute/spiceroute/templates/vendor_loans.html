@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}My Loans - SpiceRoute{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-success mb-4">My Loans</h2>
+    <p class="lead">Apply for micro-loans and manage your repayments.</p>
+
+    <!-- Loan Application Section -->
+    <div class="card mb-4 shadow-sm rounded-3">
+        <div class="card-header bg-success text-white rounded-top-3">
+            <h5 class="mb-0">Apply for a New Loan</h5>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST" action="{% url 'vendor_loans' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="loanAmount" class="form-label">Loan Amount (₹)</label>
+                    <input type="number" class="form-control rounded-pill" id="loanAmount" name="amount" min="100" step="100" required placeholder="e.g., 5000">
+                    <small class="form-text text-muted">Minimum loan amount is ₹100.</small>
+                </div>
+                <div class="mb-3">
+                    <label for="repaymentPeriod" class="form-label">Repayment Period</label>
+                    <select class="form-select rounded-pill" id="repaymentPeriod" name="repayment_period" required>
+                        <option value="">Select Period</option>
+                        {% for days, label in repayment_periods %}
+                            <option value="{{ days }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 rounded-pill">Submit Loan Application</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loan History Section -->
+    <div class="card shadow-sm rounded-3">
+        <div class="card-header bg-success text-white rounded-top-3">
+            <h5 class="mb-0">Loan History</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if loans %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Loan ID</th>
+                            <th scope="col">Amount Granted</th>
+                            <th scope="col">Amount to Repay</th>
+                            <th scope="col">Period</th>
+                            <th scope="col">Disbursement Date</th>
+                            <th scope="col">Due Date</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in loans %}
+                        <tr>
+                            <td>{{ loan.id }}</td>
+                            <td>₹{{ loan.amount_granted }}</td>
+                            <td>₹{{ loan.amount_to_repay|floatformat:2 }}</td>
+                            <td>{{ loan.repayment_period_days }} Days</td>
+                            <td>{{ loan.disbursement_date|date:"d M Y" }}</td>
+                            <td>{{ loan.due_date|date:"d M Y" }}</td>
+                            <td>
+                                {% if loan.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% elif loan.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending Admin Approval</span>
+                                {% elif loan.status == 'repaid' %}
+                                    <span class="badge bg-info">Repaid</span>
+                                {% elif loan.status == 'overdue' %}
+                                    <span class="badge bg-danger">Overdue</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ loan.status|capfirst }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if loan.status == 'active' or loan.status == 'overdue' %}
+                                    <button class="btn btn-sm btn-outline-success" onclick="alert('Repayment functionality coming soon for Loan ID: {{ loan.id }}')">Repay Now</button>
+                                {% else %}
+                                    <small class="text-muted">N/A</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="p-4 text-center text-muted">No loan history found. Apply for your first loan above!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}SpiceRoute - Your Daily Freshness, Delivered.{% endblock %}
+
+{% block content %}
+<header class="text-center py-5">
+    <h1 class="display-4 fw-bold text-success">SpiceRoute: Your Daily Freshness, Delivered.</h1>
+    <p class="lead mt-3">Solving the hidden struggle of raw material sourcing for India's vibrant street food scene.</p>
+    <div class="mt-4">
+        <a href="/register" class="btn btn-primary btn-lg mx-2">Join as a Vendor</a>
+        <a href="/register" class="btn btn-outline-primary btn-lg mx-2">Join as a Supplier (MSH)</a>
+    </div>
+</header>
+
+<section class="py-5">
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Save Time</h5>
+                    <p class="card-text">No more daily trips to the market. Focus on your craft, we handle sourcing.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Reduce Costs</h5>
+                    <p class="card-text">Benefit from collective bargaining and AI-suggested optimal pricing.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Quality Assured</h5>
+                    <p class="card-text">Access fresh, high-quality raw materials through our vetted Micro-Supply Hubs.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-light rounded-3">
+    <h2 class="text-center mb-5 text-success">How It Works</h2>
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">1. Order</h5>
+                    <p class="card-text">Vendors easily place orders via our app, with voice search and AI suggestions.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">2. Quality Check</h5>
+                    <p class="card-text">MSHs perform rigorous quality checks on all incoming raw materials.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card p-4 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">3. Deliver</h5>
+                    <p class="card-text">Timely and efficient delivery to your stall, exactly when you need it.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <h2 class="text-center mb-4 text-success">Ready to Transform Your Business?</h2>
+    <p class="text-center lead">Join the SpiceRoute community today and experience the difference.</p>
+    <div class="text-center mt-4">
+        <a href="/register" class="btn btn-primary btn-lg">Get Started Now</a>
+    </div>
+</section>
+{% endblock %}

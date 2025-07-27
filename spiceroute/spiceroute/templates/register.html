@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - SpiceRoute{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="card-title text-center mb-4 text-success">Join SpiceRoute</h2>
+                <form method="post">
+                    {% csrf_token %} {# Django security token #}
+                    <div class="mb-3">
+                        <label for="userType" class="form-label">Register As:</label>
+                        <select class="form-select" id="userType" name="user_type" required>
+                            <option value="">Select...</option>
+                            <option value="vendor">Vendor</option>
+                            <option value="supplier">Supplier (MSH)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name / Business Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phoneNumber" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phoneNumber" name="phone_number" placeholder="e.g., 9876543210" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email address (Optional)</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="locationPincode" class="form-label">Location Pincode</label>
+                        <input type="text" class="form-control" id="locationPincode" name="location_pincode" required>
+                    </div>
+                    <div class="mb-3" id="vendorSpecific" style="display: none;">
+                        <label for="typeOfFood" class="form-label">Type of Food (e.g., Chaat, Dosa)</label>
+                        <input type="text" class="form-control" id="typeOfFood" name="type_of_food">
+                    </div>
+                    <div class="mb-3" id="supplierSpecific" style="display: none;">
+                        <label for="businessRegistration" class="form-label">Business Registration Details (Optional)</label>
+                        <textarea class="form-control" id="businessRegistration" name="business_registration_details" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="termsCheck" required>
+                        <label class="form-check-label" for="termsCheck">I agree to the <a href="#" class="text-success">Terms & Conditions</a></label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Register</button>
+                </form>
+                <div class="text-center mt-3">
+                    Already have an account? <a href="/login" class="text-success">Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // JavaScript to show/hide fields based on user type selection
+    document.getElementById('userType').addEventListener('change', function() {
+        var userType = this.value;
+        document.getElementById('vendorSpecific').style.display = (userType === 'vendor') ? 'block' : 'none';
+        document.getElementById('supplierSpecific').style.display = (userType === 'supplier') ? 'block' : 'none';
+    });
+</script>
+{% endblock %}

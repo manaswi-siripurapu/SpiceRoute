@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Vendor Dashboard - SpiceRoute{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-success mb-4">Welcome, {{ vendor_name }}!</h2>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Current Orders</h5>
+                    <p class="card-text">Track your pending and upcoming deliveries.</p>
+                    <a href="{% url 'vendor_orders' %}" class="btn btn-outline-primary">View Orders</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Outstanding Loans</h5>
+                    <p class="card-text">Manage your micro-loans and repayment schedules.</p>
+                    <a href="{% url 'vendor_loans' %}" class="btn btn-outline-primary">Manage Loans</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Leftover Market</h5>
+                    <p class="card-text">Buy or sell healthy leftover groceries with other vendors.</p>
+                    <a href="{% url 'vendor_leftovers' %}" class="btn btn-outline-primary">Explore Market</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Suggestions / Daily Deals Section -->
+    <div class="card mb-4 shadow-sm rounded-3">
+        <div class="card-body">
+            <h4 class="card-title text-success">AI Recommends for You!</h4>
+            <p class="card-text">Based on your past purchases and market trends, here are some smart suggestions:</p>
+            <div class="row">
+                {% if ai_suggestions %}
+                    {% for suggestion in ai_suggestions %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-light h-100">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">{{ suggestion.type }}</h6>
+                                <h5 class="card-title">{{ suggestion.product_name }}</h5>
+                                {% if suggestion.suggested_quantity %}
+                                    <p class="card-text">Buy: {{ suggestion.suggested_quantity }} {{ suggestion.suggested_unit }}</p>
+                                {% endif %}
+                                {% if suggestion.suggested_price %}
+                                    <p class="card-text fw-bold">Price: ₹{{ suggestion.suggested_price }}</p>
+                                {% endif %}
+                                <p class="card-text"><small class="text-muted">{{ suggestion.reason }}</small></p>
+                                {% if suggestion.product_id %}
+                                    <button class="btn btn-sm btn-success add-ai-to-cart-btn mt-2"
+                                            data-product-id="{{ suggestion.product_id }}"
+                                            data-product-name="{{ suggestion.product_name }}"
+                                            data-suggested-quantity="{{ suggestion.suggested_quantity }}"
+                                            data-suggested-price="{{ suggestion.suggested_price }}"
+                                            data-product-unit="{{ suggestion.suggested_unit }}">
+                                        Add to Cart
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center py-3">
+                        <p class="text-muted">No AI suggestions available yet. Start placing orders to get personalized recommendations!</p>
+                    </div>
+                {% endif %}
+            </div>
+            <a href="{% url 'browse_products' %}" class="btn btn-primary mt-3">Browse All Raw Materials</a>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <a href="{% url 'browse_products' %}" class="btn btn-lg btn-block btn-success w-100 mb-3">
+                <i class="fas fa-shopping-cart me-2"></i> Place New Order
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{% url 'vendor_loans' %}" class="btn btn-lg btn-block btn-info w-100 mb-3 text-white">
+                <i class="fas fa-hand-holding-usd me-2"></i> Apply for Loan
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to update cart count in navbar (from base.html)
+    function updateCartCount() {
+        let cart = JSON.parse(sessionStorage.getItem('spicerouteCart')) || [];
+        const cartCountElement = document.getElementById('cartCount');
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        if (cartCountElement) {
+            cartCountElement.textContent = totalItems;
+            cartCountElement.style.display = totalItems > 0 ? 'inline-block' : 'none';
+        }
+    }
+
+    // Add event listener for AI suggestion "Add to Cart" buttons
+    document.querySelectorAll('.add-ai-to-cart-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const productId = this.dataset.productId;
+            const suggestedQuantity = parseFloat(this.dataset.suggestedQuantity);
+            const productName = this.dataset.productName;
+            const productPrice = parseFloat(this.dataset.suggestedPrice); // Use suggested price for client-side display
+            const productUnit = this.dataset.productUnit;
+
+            try {
+                const response = await fetch('/api/add-ai-suggestion-to-cart/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken') // Get CSRF token for POST request
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        suggested_quantity: suggestedQuantity
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Update client-side cart based on the product data returned by the API
+                    let cart = JSON.parse(sessionStorage.getItem('spicerouteCart')) || [];
+                    const existingItemIndex = cart.findIndex(item => item.id === productId);
+
+                    if (existingItemIndex > -1) {
+                        cart[existingItemIndex].quantity += suggestedQuantity;
+                    } else {
+                        cart.push({
+                            id: productId,
+                            name: productName,
+                            price: productPrice, // Using suggested price
+                            unit: productUnit,
+                            quantity: suggestedQuantity
+                        });
+                    }
+                    sessionStorage.setItem('spicerouteCart', JSON.stringify(cart));
+                    updateCartCount();
+                    alert(`${productName} (${suggestedQuantity} ${productUnit}) added to cart!`);
+                } else {
+                    alert(`Failed to add to cart: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error adding AI suggestion to cart:', error);
+                alert('An error occurred while adding to cart. Please try again.');
+            }
+        });
+    });
+
+    // Helper function to get CSRF token for AJAX requests
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Initialize cart count on page load
+    document.addEventListener('DOMContentLoaded', updateCartCount);
+</script>

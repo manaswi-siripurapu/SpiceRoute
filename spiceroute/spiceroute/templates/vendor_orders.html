@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load custom_filters %} {# Load your custom get_item filter here #}
+
+{% block title %}My Orders - SpiceRoute{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-success mb-4">My Order History</h2>
+    <p class="lead">Track your raw material orders from Micro-Supply Hubs.</p>
+
+    <!-- Order Status Tabs -->
+    <ul class="nav nav-tabs mb-4" id="vendorOrderStatusTabs" role="tablist">
+        {% for status_value, status_label in order_status_choices %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if forloop.first %}active{% endif %}" id="vendor-{{ status_value }}-tab" data-bs-toggle="tab" data-bs-target="#vendor-{{ status_value }}" type="button" role="tab" aria-controls="vendor-{{ status_value }}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                {{ status_label }} ({{ orders_by_status|get_item:status_value|length }})
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="vendorOrderStatusTabsContent">
+        {% for status_value, status_label in order_status_choices %}
+        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="vendor-{{ status_value }}" role="tabpanel" aria-labelledby="vendor-{{ status_value }}-tab">
+            <div class="card shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-info text-white rounded-top-3">
+                    <h5 class="mb-0">{{ status_label }} Orders</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if orders_by_status|get_item:status_value %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Order ID</th>
+                                    <th scope="col">Supplier</th>
+                                    <th scope="col">Order Date</th>
+                                    <th scope="col">Total Amount</th>
+                                    <th scope="col">Delivery Option</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders_by_status|get_item:status_value %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>{{ order.supplier.business_name }}</td>
+                                    <td>{{ order.order_date|date:"d M Y H:i" }}</td>
+                                    <td>₹{{ order.total_amount|floatformat:2 }}</td>
+                                    <td>{{ order.get_delivery_option_display }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% elif order.status == 'pending' %}warning text-dark{% else %}info{% endif %}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary view-order-details-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#orderDetailsModal"
+                                                data-order-id="{{ order.id }}">
+                                            Details
+                                        </button>
+                                        {# Optional: Reorder button, Cancel button (if status allows) #}
+                                        {% if order.status == 'delivered' %}
+                                            <a href="{% url 'vendor_my_reviews' %}" class="btn btn-sm btn-outline-success">Review</a>
+                                        {% elif order.status == 'pending' %}
+                                            {# Example: Add a form to cancel here if desired #}
+                                            {# <form method="POST" action="{% url 'cancel_order' order.id %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+                                            </form> #}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="p-4 text-center text-muted">No {{ status_label|lower }} orders found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Order Details Modal (Reused from supplier_orders.html) -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header bg-success text-white rounded-top-3">
+                <h5 class="modal-title" id="orderDetailsModalLabel">Order Details #<span id="modalOrderId"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p><strong>Supplier:</strong> <span id="modalSupplierName"></span></p> {# Changed from Vendor to Supplier #}
+                <p><strong>Order Date:</strong> <span id="modalOrderDate"></span></p>
+                <p><strong>Delivery Option:</strong> <span id="modalDeliveryOption"></span></p>
+                <p><strong>Scheduled Time:</strong> <span id="modalScheduledTime"></span></p>
+                <p><strong>Delivery Address:</strong> <span id="modalDeliveryAddress"></span></p>
+                <p><strong>Payment Method:</strong> <span id="modalPaymentMethod"></span></p>
+                <p><strong>Co-Vendor Order:</strong> <span id="modalCoVendorOrder"></span></p>
+                <p><strong>Discount Applied:</strong> ₹<span id="modalDiscountApplied"></span></p>
+
+                <h6 class="mt-4 mb-3">Items:</h6>
+                <ul class="list-group" id="modalOrderItems">
+                    <!-- Order items will be loaded here by JS -->
+                </ul>
+                <h5 class="mt-4 text-end">Total: ₹<span id="modalTotalAmount"></span></h5>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Order Details Modal Logic (Reused and slightly adapted) ---
+    document.querySelectorAll('.view-order-details-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const orderId = this.dataset.orderId;
+            
+            // Clear previous modal content
+            document.getElementById('modalOrderItems').innerHTML = '';
+
+            try {
+                // Fetch order details from the API endpoint
+                const response = await fetch(`/api/order-details/${orderId}/`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const order = await response.json();
+
+                // Populate modal with order data
+                document.getElementById('modalOrderId').textContent = order.id;
+                document.getElementById('modalSupplierName').textContent = order.supplier_name; 
+                document.getElementById('modalOrderDate').textContent = new Date(order.order_date).toLocaleString();
+                document.getElementById('modalDeliveryOption').textContent = order.delivery_option_display;
+                document.getElementById('modalScheduledTime').textContent = order.scheduled_delivery_time ? new Date(order.scheduled_delivery_time).toLocaleString() : 'Instant';
+                document.getElementById('modalDeliveryAddress').textContent = order.delivery_address;
+                document.getElementById('modalPaymentMethod').textContent = order.payment_method_display;
+                document.getElementById('modalCoVendorOrder').textContent = order.is_co_vendor_order ? 'Yes' : 'No';
+                document.getElementById('modalDiscountApplied').textContent = order.discount_applied;
+                document.getElementById('modalTotalAmount').textContent = order.total_amount;
+
+                // Populate order items
+                const orderItemsList = document.getElementById('modalOrderItems');
+                order.items.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    listItem.innerHTML = `
+                        <div>
+                            <h6>${item.product_name}</h6>
+                            <small class="text-muted">${item.quantity} ${item.unit_of_measure} @ ₹${item.price_per_unit_at_purchase}</small>
+                        </div>
+                        <span class="fw-bold">₹${item.subtotal}</span>
+                    `;
+                    orderItemsList.appendChild(listItem);
+                });
+
+                const orderDetailsModal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+                orderDetailsModal.show();
+
+            } catch (error) {
+                console.error('Error fetching order details:', error);
+                alert('Failed to load order details. Please try again.');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Leftover Market - SpiceRoute{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-success mb-4">Leftover Groceries Market</h2>
+    <p class="lead">Connect with other vendors to buy or sell healthy, unused raw materials at lower prices.</p>
+
+    <!-- List Item for Sale Section -->
+    <div class="card mb-5 shadow-sm rounded-3">
+        <div class="card-header bg-success text-white rounded-top-3">
+            <h5 class="mb-0">List an Item for Sale</h5>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST" action="{% url 'vendor_leftovers' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="itemName" class="form-label">Item Name</label>
+                        <input type="text" class="form-control rounded-pill" id="itemName" name="item_name" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control rounded-pill" id="quantity" name="quantity" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="unitOfMeasure" class="form-label">Unit</label>
+                        <select class="form-select rounded-pill" id="unitOfMeasure" name="unit_of_measure" required>
+                            {% for value, label in unit_of_measure_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pricePerUnit" class="form-label">Price Per Unit (₹)</label>
+                        <input type="number" class="form-control rounded-pill" id="pricePerUnit" name="price_per_unit" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="condition" class="form-label">Condition</label>
+                        <select class="form-select rounded-pill" id="condition" name="condition" required>
+                            {% for value, label in condition_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="expiryDate" class="form-label">Expiry Date (Optional)</label>
+                        <input type="date" class="form-control rounded-pill" id="expiryDate" name="expiry_date">
+                        <small class="form-text text-muted">Suggests freshness. Leave blank if not applicable.</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pickupDelivery" class="form-label">Pickup/Delivery Preference</label>
+                        <select class="form-select rounded-pill" id="pickupDelivery" name="pickup_delivery_preference" required>
+                            {% for value, label in pickup_delivery_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label for="photo" class="form-label">Upload Photo (Optional)</label>
+                        <input type="file" class="form-control rounded-pill" id="photo" name="photo" accept="image/*">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mt-4 rounded-pill">List Item</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- My Active Listings Section -->
+    <div class="card mb-5 shadow-sm rounded-3">
+        <div class="card-header bg-info text-white rounded-top-3">
+            <h5 class="mb-0">My Active Listings</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if my_listings %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Item</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Condition</th>
+                            <th scope="col">Listed On</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for listing in my_listings %}
+                        <tr>
+                            <td>{{ listing.item_name }}</td>
+                            <td>{{ listing.quantity }} {{ listing.unit_of_measure }}</td>
+                            <td>₹{{ listing.price_per_unit }}</td>
+                            <td>{{ listing.get_condition_display }}</td>
+                            <td>{{ listing.listing_date|date:"d M Y" }}</td>
+                            <td>
+                                {% if listing.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Sold</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if listing.is_active %}
+                                    <button class="btn btn-sm btn-outline-danger mark-sold-btn"
+                                            data-bs-toggle="modal" data-bs-target="#confirmSoldModal"
+                                            data-listing-id="{{ listing.id }}"
+                                            data-item-name="{{ listing.item_name }}">
+                                        Mark as Sold
+                                    </button>
+                                {% else %}
+                                    <small class="text-muted">Completed</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="p-4 text-center text-muted">You have no active listings. List an item above!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Browse Leftovers from Other Vendors Section -->
+    <div class="card shadow-sm rounded-3">
+        <div class="card-header bg-success text-white rounded-top-3">
+            <h5 class="mb-0">Browse Leftovers from Other Vendors</h5>
+        </div>
+        <div class="card-body">
+            {% if other_listings %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for listing in other_listings %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm rounded-3">
+                        {% if listing.photo %}
+                            <img src="{{ listing.photo.url }}" class="card-img-top rounded-top-3" alt="{{ listing.item_name }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <img src="https://placehold.co/400x200/e9ecef/495057?text={{ listing.item_name|urlencode }}" class="card-img-top rounded-top-3" alt="{{ listing.item_name }}" style="height: 200px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-success">{{ listing.item_name }}</h5>
+                            <p class="card-text text-muted mb-1">
+                                <small>By {{ listing.seller_vendor.name }} 
+                                {% if listing.seller_vendor.average_rating_as_seller > 0 %}
+                                    ({{ listing.seller_vendor.average_rating_as_seller }} <i class="fas fa-star text-warning"></i>)
+                                {% else %}
+                                    (No seller reviews yet)
+                                {% endif %}
+                                </small>
+                            </p>
+                            <p class="card-text fw-bold fs-5">₹{{ listing.price_per_unit }} / {{ listing.unit_of_measure }}</p>
+                            <p class="card-text mb-2">Quantity: {{ listing.quantity }} {{ listing.unit_of_measure }}</p>
+                            <p class="card-text mb-2">Condition: <span class="badge bg-info text-dark">{{ listing.get_condition_display }}</span></p>
+                            {% if listing.expiry_date %}
+                                <p class="card-text mb-2"><small class="text-danger">Expires: {{ listing.expiry_date|date:"d M Y" }}</small></p>
+                            {% endif %}
+                            <p class="card-text mb-2"><small>Preference: {{ listing.get_pickup_delivery_preference_display }}</small></p>
+                            
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <button class="btn btn-primary contact-seller-btn"
+                                    data-seller-name="{{ listing.seller_vendor.name }}"
+                                    data-seller-phone="{{ listing.seller_vendor.user.phone_number }}">
+                                    Contact Seller
+                                </button>
+                                <button class="btn btn-outline-success buy-leftover-btn"
+                                    data-bs-toggle="modal" data-bs-target="#confirmBuyModal"
+                                    data-listing-id="{{ listing.id }}"
+                                    data-item-name="{{ listing.item_name }}"
+                                    data-seller-name="{{ listing.seller_vendor.name }}">
+                                    Buy Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="p-4 text-center text-muted">No leftover items listed by other vendors in your area right now. Check back later!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Contact Seller Modal -->
+<div class="modal fade" id="contactSellerModal" tabindex="-1" aria-labelledby="contactSellerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header bg-success text-white rounded-top-3">
+                <h5 class="modal-title" id="contactSellerModalLabel">Contact Seller</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>You can contact <strong id="modalSellerName"></strong> directly to arrange pickup/delivery and payment for this leftover item.</p>
+                <p class="mb-0">Seller Phone: <strong id="modalSellerPhone"></strong></p>
+                <p class="text-muted mt-2"><small>SpiceRoute facilitates this connection but is not responsible for direct negotiations or transactions outside the platform.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Mark as Sold Modal -->
+<div class="modal fade" id="confirmSoldModal" tabindex="-1" aria-labelledby="confirmSoldModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header bg-danger text-white rounded-top-3">
+                <h5 class="modal-title" id="confirmSoldModalLabel">Confirm Sale</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>Are you sure you want to mark "<strong id="confirmSoldItemName"></strong>" as sold?</p>
+                <p class="mb-3">This will remove it from the active listings.</p>
+                <form id="markSoldForm" method="POST" action="">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="buyerVendorId" class="form-label">Buyer's Phone/Email/Username (Optional)</label>
+                        <input type="text" class="form-control rounded-pill" id="buyerVendorId" name="buyer_vendor_id" placeholder="Enter buyer's ID for tracking">
+                        <small class="form-text text-muted">Helps track who bought your item. Can be left blank.</small>
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100 rounded-pill">Yes, Mark as Sold</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Buy Leftover Modal -->
+<div class="modal fade" id="confirmBuyModal" tabindex="-1" aria-labelledby="confirmBuyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header bg-success text-white rounded-top-3">
+                <h5 class="modal-title" id="confirmBuyModalLabel">Confirm Purchase</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p>You are about to purchase "<strong id="confirmBuyItemName"></strong>" from <strong id="confirmBuySellerName"></strong>.</p>
+                <p class="mb-3">Please contact the seller directly to arrange payment and pickup/delivery after confirming.</p>
+                <form id="confirmBuyForm" method="POST" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill">Confirm Purchase</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // --- Contact Seller Modal Logic ---
+    document.querySelectorAll('.contact-seller-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const sellerName = this.dataset.sellerName;
+            const sellerPhone = this.dataset.sellerPhone;
+            document.getElementById('modalSellerName').textContent = sellerName;
+            document.getElementById('modalSellerPhone').textContent = sellerPhone;
+            const contactSellerModal = new bootstrap.Modal(document.getElementById('contactSellerModal'));
+            contactSellerModal.show();
+        });
+    });
+
+    // --- Mark as Sold Modal Logic ---
+    document.querySelectorAll('.mark-sold-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const listingId = this.dataset.listingId;
+            const itemName = this.dataset.itemName;
+            document.getElementById('confirmSoldItemName').textContent = itemName;
+            
+            const markSoldForm = document.getElementById('markSoldForm');
+            markSoldForm.action = `/vendor/leftovers/mark-sold/${listingId}/`; // Set form action dynamically
+            
+            const confirmSoldModal = new bootstrap.Modal(document.getElementById('confirmSoldModal'));
+            confirmSoldModal.show();
+        });
+    });
+
+    // --- Confirm Buy Leftover Modal Logic ---
+    document.querySelectorAll('.buy-leftover-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const listingId = this.dataset.listingId;
+            const itemName = this.dataset.itemName;
+            const sellerName = this.dataset.sellerName;
+
+            document.getElementById('confirmBuyItemName').textContent = itemName;
+            document.getElementById('confirmBuySellerName').textContent = sellerName;
+            
+            const confirmBuyForm = document.getElementById('confirmBuyForm');
+            confirmBuyForm.action = `/vendor/leftovers/mark-sold/${listingId}/`; // Reuse mark-sold endpoint, but logic will differ on backend
+            // Note: For a true "buy" action, you might want a separate backend endpoint
+            // that also notifies the seller and potentially handles payment.
+            // For hackathon simplicity, we are reusing the mark-sold endpoint.
+            
+            const confirmBuyModal = new bootstrap.Modal(document.getElementById('confirmBuyModal'));
+            confirmBuyModal.show();
+        });
+    });
+
+</script>
+{% endblock %}

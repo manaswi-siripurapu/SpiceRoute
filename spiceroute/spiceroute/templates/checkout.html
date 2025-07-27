@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout - SpiceRoute{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-success mb-4">Checkout</h2>
+    <p class="lead">Review your order and finalize your purchase.</p>
+
+    {% if cart_items %}
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4 shadow-sm rounded-3">
+                <div class="card-header bg-success text-white rounded-top-3">
+                    <h5 class="mb-0">Your Cart Items</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for item in cart_items %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ item.product.name }}</h6>
+                                <small class="text-muted">{{ item.quantity }} {{ item.product.unit_of_measure }} @ ₹{{ item.product.current_price_per_unit }} / {{ item.product.unit_of_measure }}</small>
+                            </div>
+                            <span class="fw-bold">₹{{ item.subtotal }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mb-4 shadow-sm rounded-3">
+                <div class="card-header bg-success text-white rounded-top-3">
+                    <h5 class="mb-0">Delivery Details</h5>
+                </div>
+                <div class="card-body">
+                    <form id="checkoutForm" method="POST" action="{% url 'checkout' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="cart_data" id="cartDataInput"> {# Hidden input for cart data #}
+
+                        <div class="mb-3">
+                            <label for="deliveryAddress" class="form-label">Delivery Address</label>
+                            <textarea class="form-control rounded-3" id="deliveryAddress" name="delivery_address" rows="3" required>{{ vendor_profile.location_address|default_if_none:'' }}</textarea>
+                            <small class="form-text text-muted">This is your registered address. You can change it for this order.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="deliveryOption" class="form-label">Delivery Option</label>
+                            <select class="form-select rounded-pill" id="deliveryOption" name="delivery_option" required>
+                                {% for value, label in delivery_options %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="coVendorId" class="form-label">Co-Vendor ID (for discount)</label>
+                            <input type="text" class="form-control rounded-pill" id="coVendorId" name="co_vendor_id" placeholder="Enter co-vendor's phone/email/username (Optional)">
+                            <small class="form-text text-muted">Partner with another vendor to get a discount!</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="paymentMethod" class="form-label">Payment Method</label>
+                            <select class="form-select rounded-pill" id="paymentMethod" name="payment_method" required>
+                                <option value="cod">Cash on Delivery (COD)</option>
+                                <option value="online">Online Payment (UPI/Cards) - Coming Soon</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm rounded-3">
+                <div class="card-header bg-success text-white rounded-top-3">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Subtotal</span>
+                            <span>₹{{ total_amount }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Delivery Charge</span>
+                            <span>₹{{ delivery_charge }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between text-success fw-bold">
+                            <span>Grand Total</span>
+                            <span>₹{{ grand_total }}</span>
+                        </li>
+                    </ul>
+                    <button type="submit" form="checkoutForm" class="btn btn-primary w-100 mt-3 rounded-pill">Place Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center" role="alert">
+        Your cart is empty. Please <a href="{% url 'browse_products' %}" class="alert-link">browse products</a> to add items.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // --- Cart Data Transfer from sessionStorage to Hidden Input ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const cart = JSON.parse(sessionStorage.getItem('spicerouteCart')) || [];
+        const cartDataInput = document.getElementById('cartDataInput');
+        
+        if (cartDataInput) {
+            cartDataInput.value = JSON.stringify(cart);
+        }
+
+        // Optional: Clear cart from sessionStorage after it's loaded into the form
+        // This is a design choice. You might want to clear it only AFTER successful order.
+        // For now, we'll let the backend clear it after order creation.
+    });
+
+    // Update cart count in navbar on checkout page load (if needed)
+    // This function is already in base.html script, but ensure it runs on this page too
+    // (it should if base.html script is loaded after DOMContentLoaded)
+    // You might want to move this into a global JS file or ensure base.html script runs after this page's content is loaded.
+    // For now, let's assume updateCartCount from base.html is sufficient.
+</script>
+{% endblock %}

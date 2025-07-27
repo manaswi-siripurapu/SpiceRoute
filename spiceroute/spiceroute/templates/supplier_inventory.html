@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load static %} {# To load static files like images #}
+
+{% block title %}My Inventory - SpiceRoute{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-success mb-4">Inventory Management</h2>
+    <p class="lead">Add, update, and manage your raw material stock and pricing.</p>
+
+    <!-- Add New Product Section -->
+    <div class="card mb-5 shadow-sm rounded-3">
+        <div class="card-header bg-success text-white rounded-top-3">
+            <h5 class="mb-0">Add New Product</h5>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST" action="{% url 'supplier_inventory' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_product">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="productName" class="form-label">Product Name</label>
+                        <input type="text" class="form-control rounded-pill" id="productName" name="name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="productCategory" class="form-label">Category</label>
+                        <select class="form-select rounded-pill" id="productCategory" name="category" required>
+                            <option value="">Select Category</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="pricePerUnit" class="form-label">Price Per Unit (₹)</label>
+                        <input type="number" class="form-control rounded-pill" id="pricePerUnit" name="current_price_per_unit" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="quantityAvailable" class="form-label">Quantity Available</label>
+                        <input type="number" class="form-control rounded-pill" id="quantityAvailable" name="quantity_available" min="0" step="0.01" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="unitOfMeasure" class="form-label">Unit</label>
+                        <select class="form-select rounded-pill" id="unitOfMeasure" name="unit_of_measure" required>
+                            {% for value, label in unit_of_measure_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="qualityGrade" class="form-label">Quality Grade</label>
+                        <select class="form-select rounded-pill" id="qualityGrade" name="quality_grade" required>
+                            {% for value, label in quality_grade_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="isOrganic" name="is_organic">
+                            <label class="form-check-label" for="isOrganic">
+                                Organic Certified
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <label for="productDescription" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control rounded-3" id="productDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="col-md-12">
+                        <label for="productImage" class="form-label">Product Image (Optional)</label>
+                        <input type="file" class="form-control rounded-pill" id="productImage" name="image" accept="image/*">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mt-4 rounded-pill">Add Product</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Current Inventory Section -->
+    <div class="card shadow-sm rounded-3">
+        <div class="card-header bg-info text-white rounded-top-3">
+            <h5 class="mb-0">Current Inventory</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if products %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Image</th>
+                            <th scope="col">Product Name</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Quality</th>
+                            <th scope="col">Organic</th>
+                            <th scope="col">AI Price Suggestion</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>
+                                {% if product.image %}
+                                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover; border-radius: 0.5rem;">
+                                {% else %}
+                                    <img src="https://placehold.co/50x50/e9ecef/495057?text=NoImg" alt="No Image" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover; border-radius: 0.5rem;">
+                                {% endif %}
+                            </td>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.category.name|default:"N/A" }}</td>
+                            <td>₹{{ product.current_price_per_unit }} / {{ product.unit_of_measure }}</td>
+                            <td>{{ product.quantity_available }} {{ product.unit_of_measure }}</td>
+                            <td>{{ product.get_quality_grade_display }}</td>
+                            <td>{% if product.is_organic %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-times-circle text-danger"></i>{% endif %}</td>
+                            <td>
+                                {% if product.ai_suggested_min_price and product.ai_suggested_max_price %}
+                                    ₹{{ product.ai_suggested_min_price|floatformat:2 }} - ₹{{ product.ai_suggested_max_price|floatformat:2 }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary edit-product-btn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editProductModal"
+                                        data-product-id="{{ product.id }}">
+                                    Edit
+                                </button>
+                                {# Optional: Delete button - implement delete view later #}
+                                {# <button class="btn btn-sm btn-outline-danger">Delete</button> #}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="p-4 text-center text-muted">You have no products in your inventory. Add a new product above!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header bg-success text-white rounded-top-3">
+                <h5 class="modal-title" id="editProductModalLabel">Edit Product: <span id="modalEditProductName"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editProductForm" method="POST" action="{% url 'supplier_inventory' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit_product">
+                    <input type="hidden" name="product_id" id="editProductId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="editProductName" class="form-label">Product Name</label>
+                            <input type="text" class="form-control rounded-pill" id="editProductName" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editProductCategory" class="form-label">Category</label>
+                            <select class="form-select rounded-pill" id="editProductCategory" name="category" required>
+                                <option value="">Select Category</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editPricePerUnit" class="form-label">Price Per Unit (₹)</label>
+                            <input type="number" class="form-control rounded-pill" id="editPricePerUnit" name="current_price_per_unit" min="0.01" step="0.01" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editQuantityAvailable" class="form-label">Quantity Available</label>
+                            <input type="number" class="form-control rounded-pill" id="editQuantityAvailable" name="quantity_available" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editUnitOfMeasure" class="form-label">Unit</label>
+                            <select class="form-select rounded-pill" id="editUnitOfMeasure" name="unit_of_measure" required>
+                                {% for value, label in unit_of_measure_choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editQualityGrade" class="form-label">Quality Grade</label>
+                            <select class="form-select rounded-pill" id="editQualityGrade" name="quality_grade" required>
+                                {% for value, label in quality_grade_choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center">
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" id="editIsOrganic" name="is_organic">
+                                <label class="form-check-label" for="editIsOrganic">
+                                    Organic Certified
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="editProductDescription" class="form-label">Description (Optional)</label>
+                            <textarea class="form-control rounded-3" id="editProductDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label for="editProductImage" class="form-label">Product Image (Optional)</label>
+                            <input type="file" class="form-control rounded-pill" id="editProductImage" name="image" accept="image/*">
+                            <small class="form-text text-muted">Upload new image to replace current. Current: <a id="currentProductImageLink" href="#" target="_blank">View Image</a></small>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mt-4 rounded-pill">Save Changes</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Edit Product Modal Logic ---
+    document.querySelectorAll('.edit-product-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const productId = this.dataset.productId;
+            
+            try {
+                // Fetch product details from the API endpoint
+                const response = await fetch(`/api/product-details/${productId}/`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const product = await response.json();
+
+                // Populate modal form fields
+                document.getElementById('editProductId').value = product.id;
+                document.getElementById('modalEditProductName').textContent = product.name; // Update modal title
+                document.getElementById('editProductName').value = product.name;
+                document.getElementById('editProductDescription').value = product.description || '';
+                document.getElementById('editProductCategory').value = product.category_id || '';
+                document.getElementById('editUnitOfMeasure').value = product.unit_of_measure;
+                document.getElementById('editPricePerUnit').value = product.current_price_per_unit;
+                document.getElementById('editQuantityAvailable').value = product.quantity_available;
+                document.getElementById('editQualityGrade').value = product.quality_grade;
+                document.getElementById('editIsOrganic').checked = product.is_organic;
+
+                const currentImageLink = document.getElementById('currentProductImageLink');
+                if (product.image_url) {
+                    currentImageLink.href = product.image_url;
+                    currentImageLink.style.display = 'inline';
+                } else {
+                    currentImageLink.style.display = 'none';
+                }
+
+                const editProductModal = new bootstrap.Modal(document.getElementById('editProductModal'));
+                editProductModal.show();
+
+            } catch (error) {
+                console.error('Error fetching product details:', error);
+                alert('Failed to load product details for editing. Please try again.');
+            }
+        });
+    });
+</script>
+{% endblock %}

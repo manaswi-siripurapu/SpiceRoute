@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - SpiceRoute{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="card-title text-center mb-4 text-success">Welcome Back!</h2>
+                <form method="post">
+                    {% csrf_token %} {# Django security token #}
+                    <div class="mb-3">
+                        <label for="emailOrPhone" class="form-label">Email or Phone Number</label>
+                        <input type="text" class="form-control" id="emailOrPhone" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3 text-end">
+                        <a href="/forgot-password" class="text-success">Forgot Password?</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Login</button>
+                </form>
+                <div class="text-center mt-3">
+                    Don't have an account? <a href="/register" class="text-success">Register here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

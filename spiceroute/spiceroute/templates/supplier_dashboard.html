@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Supplier Dashboard - SpiceRoute{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-success mb-4">Welcome, {{ supplier_name }}!</h2>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">New Orders</h5>
+                    <p class="card-text">Review and confirm incoming orders from vendors.</p>
+                    <a href="{% url 'supplier_orders' %}" class="btn btn-outline-primary">View New Orders</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Manage Inventory</h5>
+                    <p class="card-text">Update stock levels and pricing for your products.</p>
+                    <a href="{% url 'supplier_inventory' %}" class="btn btn-outline-primary">Go to Inventory</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Manage Deliveries</h5>
+                    <p class="card-text">Plan and track your deliveries to vendors.</p>
+                    <a href="{% url 'supplier_orders' %}" class="btn btn-outline-primary">View Deliveries</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Demand Forecast / Pricing Suggestions Section -->
+    <div class="card mb-4 shadow-sm rounded-3">
+        <div class="card-body">
+            <h4 class="card-title text-success">AI Insights for Your Business!</h4>
+            <p class="card-text">Leverage smart suggestions to optimize your operations:</p>
+            <div class="row">
+                {% if ai_insights %}
+                    {% for insight in ai_insights %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-light h-100">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">{{ insight.type }}</h6>
+                                <h5 class="card-title">{{ insight.product_name }}</h5>
+                                {% if insight.type == 'Pricing Suggestion' %}
+                                    <p class="card-text">Current Price: ₹{{ insight.current_price }}</p>
+                                    <p class="card-text fw-bold">Suggested Range: ₹{{ insight.suggested_min_price }} - ₹{{ insight.suggested_max_price }}</p>
+                                    {% if insight.product_id %}
+                                        <button class="btn btn-sm btn-success update-price-btn mt-2"
+                                                data-product-id="{{ insight.product_id }}"
+                                                data-suggested-price="{{ insight.suggested_min_price }}"> {# Use min price as the suggested update #}
+                                            Update Price to Min
+                                        </button>
+                                    {% endif %}
+                                {% elif insight.type == 'Demand Forecast' %}
+                                    <p class="card-text">Recent Volume: {{ insight.recent_volume }}</p>
+                                    <p class="card-text fw-bold">Forecast: <span class="badge bg-{% if insight.forecast_level == 'High' %}danger{% elif insight.forecast_level == 'Medium' %}warning{% else %}info{% endif %}">{{ insight.forecast_level }}</span></p>
+                                {% endif %}
+                                <p class="card-text"><small class="text-muted">{{ insight.reason }}</small></p>
+                                {% if insight.product_name != 'Your Inventory' and insight.type != 'Pricing Suggestion' %} {# Don't show button for generic getting started insight, or if it's a pricing suggestion (button already there) #}
+                                    <a href="{% url 'supplier_inventory' %}" class="btn btn-sm btn-primary mt-2">Go to Inventory</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center py-3">
+                        <p class="text-muted">No AI insights available yet. List products in your inventory to get smart suggestions!</p>
+                    </div>
+                {% endif %}
+            </div>
+            <a href="{% url 'supplier_inventory' %}" class="btn btn-primary mt-3">Manage All Products</a>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <a href="{% url 'supplier_inventory' %}" class="btn btn-lg btn-block btn-success w-100 mb-3">
+                <i class="fas fa-plus-circle me-2"></i> Add New Product
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="{% url 'supplier_upstream_suppliers' %}" class="btn btn-lg btn-block btn-info w-100 mb-3 text-white">
+                <i class="fas fa-truck me-2"></i> Manage Upstream Suppliers
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Helper function to get CSRF token for AJAX requests
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Add event listener for AI suggestion "Update Price" buttons
+    document.querySelectorAll('.update-price-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const productId = this.dataset.productId;
+            const suggestedPrice = parseFloat(this.dataset.suggestedPrice);
+            
+            if (isNaN(suggestedPrice) || suggestedPrice <= 0) {
+                alert('Invalid suggested price.');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to update the price of this product to ₹${suggestedPrice}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/update-product-price/${productId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ new_price: suggestedPrice })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Price updated successfully! New price: ₹${result.new_price}`);
+                    location.reload(); // Reload page to reflect changes
+                } else {
+                    alert(`Failed to update price: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error updating product price:', error);
+                alert('An error occurred while updating the price. Please try again.');
+            }
+        });
+    });
+</script>
