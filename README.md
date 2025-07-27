@@ -1,8 +1,3 @@
-Absolutely brooosey, I got you — here’s a clean, professional yet modern `README.md` you can directly copy-paste. It avoids excessive emojis and keeps it sleek for judges:
-
----
-
-
 # SpiceRoute
 
 SpiceRoute is a modern B2B web platform designed to streamline the procurement of raw materials for small vendors directly from verified micro-suppliers. Built using Django and Bootstrap, it offers an intuitive, region-aware, and responsive user experience.
@@ -97,11 +92,3 @@ This project is for educational and demonstration purposes only. All rights rese
 
 Developed with dedication during a hackathon sprint by
 **Manaswi Siripurapu** and team.
-
----
-
-Let me know if you want:
-- A section for screenshots
-- A badge pack (build status, license, GitHub stars, etc.)
-- Deployment instructions (like Render, Railway, etc.)
-
