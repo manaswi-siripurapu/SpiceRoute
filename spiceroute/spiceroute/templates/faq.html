@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}FAQ - SpiceRoute{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="display-5 text-success mb-4 text-center">Frequently Asked Questions</h1>
+            <p class="lead text-center">Find answers to the most common questions about our platform.</p>
+            <hr class="my-5">
+
+            <div class="accordion" id="faqAccordion">
+                <!-- FAQ Item 1 -->
+                <div class="accordion-item mb-3 rounded-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                            How does SpiceRoute ensure the quality of raw materials?
+                        </button>
+                    </h2>
+                    <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            We partner with local Micro-Supply Hubs (MSHs) who are vetted by our platform. These MSHs are trained to perform standardized quality checks before delivering goods to you. Additionally, our review system allows vendors like you to provide feedback, helping us maintain a high standard of quality and trust.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 2 -->
+                <div class="accordion-item mb-3 rounded-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingTwo">
+                        <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                            How does the AI suggestion system work?
+                        </button>
+                    </h2>
+                    <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Our AI analyzes your past purchase history, seasonal trends, and local market data to recommend products and quantities. For suppliers, it suggests optimal pricing based on local competition and demand forecasts. This helps both sides of the market make smarter, more profitable decisions.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 3 -->
+                <div class="accordion-item mb-3 rounded-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingThree">
+                        <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                            What is the micro-loan system and how can I apply?
+                        </button>
+                    </h2>
+                    <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Our micro-loan system is designed to provide quick, short-term capital for vendors to manage their daily cash flow. You can apply directly from your dashboard by specifying the amount and a flexible repayment period (e.g., 2 days, 1 week). Loan applications are subject to a quick admin review.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 4 -->
+                <div class="accordion-item mb-3 rounded-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingFour">
+                        <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                            How do I get a co-vendor discount?
+                        </button>
+                    </h2>
+                    <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            If you and a fellow vendor are placing a combined order, you can enter your co-vendor's ID (phone number or email) during checkout. This allows you both to benefit from bulk pricing and a small extra discount, fostering community and collaboration.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 5 -->
+                <div class="accordion-item mb-3 rounded-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingFive">
+                        <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                            How can I sell my leftover groceries to other vendors?
+                        </button>
+                    </h2>
+                    <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            On your dashboard, navigate to the "Leftover Market" section. You can list your healthy, unused items for sale at a lower price. Other vendors in your area can then browse and contact you directly to purchase, helping you reduce food waste and recoup costs.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- FAQ Item 6 (New) -->
+                <div class="accordion-item mb-3 rounded-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingSix">
+                        <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSix" aria-expanded="false" aria-controls="collapseSix">
+                            Is there a fee to use SpiceRoute?
+                        </button>
+                    </h2>
+                    <div id="collapseSix" class="accordion-collapse collapse" aria-labelledby="headingSix" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            SpiceRoute operates on a small service fee per transaction to cover platform maintenance, logistics support, and AI-powered features. We are committed to keeping these fees low to ensure our platform remains accessible and beneficial for all vendors and suppliers.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 7 (New) -->
+                <div class="accordion-item mb-3 rounded-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingSeven">
+                        <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSeven" aria-expanded="false" aria-controls="collapseSeven">
+                            What happens if my delivery is late or the quality is poor?
+                        </button>
+                    </h2>
+                    <div id="collapseSeven" class="accordion-collapse collapse" aria-labelledby="headingSeven" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Our platform tracks delivery times and supplier performance. If an order is late or you receive a sub-standard product, you can report the issue through our support channel. Your reviews and feedback are crucial for holding MSHs accountable and ensuring a reliable service for the entire community.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- FAQ Item 8 (New) -->
+                <div class="accordion-item mb-3 rounded-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingEight">
+                        <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEight" aria-expanded="false" aria-controls="collapseEight">
+                            Can I use voice search in my local language?
+                        </button>
+                    </h2>
+                    <div id="collapseEight" class="accordion-collapse collapse" aria-labelledby="headingEight" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Yes! Our platform supports voice-based search in multiple Indian languages, including Hindi, Telugu, Tamil, and Bengali. Simply click the microphone icon in the search bar, select your language, and speak your query.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 9 (New) -->
+                <div class="accordion-item mb-3 rounded-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingNine">
+                        <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNine" aria-expanded="false" aria-controls="collapseNine">
+                            What is a Micro-Supply Hub (MSH) and how can I become one?
+                        </button>
+                    </h2>
+                    <div id="collapseNine" class="accordion-collapse collapse" aria-labelledby="headingNine" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            A Micro-Supply Hub is a local entrepreneur or small business that acts as an aggregation and distribution point for raw materials. To become an MSH, you can register through our platform's sign-up page and undergo a simple vetting process to ensure you meet our quality and service standards.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 10 (New) -->
+                <div class="accordion-item mb-3 rounded-3 shadow-sm">
+                    <h2 class="accordion-header" id="headingTen">
+                        <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTen" aria-expanded="false" aria-controls="collapseTen">
+                            What happens after I submit a loan application?
+                        </button>
+                    </h2>
+                    <div id="collapseTen" class="accordion-collapse collapse" aria-labelledby="headingTen" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            Once submitted, your loan application goes into a 'pending' state, awaiting review and approval by a platform administrator. You can track the status of your application on your "My Loans" page. If approved, the funds will be disbursed, and the loan status will change to 'active'.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -62,15 +62,13 @@
                                                 data-order-id="{{ order.id }}">
                                             Details
                                         </button>
-                                        {# Optional: Reorder button, Cancel button (if status allows) #}
-                                        {% if order.status == 'delivered' %}
-                                            <a href="{% url 'vendor_my_reviews' %}" class="btn btn-sm btn-outline-success">Review</a>
-                                        {% elif order.status == 'pending' %}
-                                            {# Example: Add a form to cancel here if desired #}
-                                            {# <form method="POST" action="{% url 'cancel_order' order.id %}" class="d-inline">
+                                        {% if order.status == 'pending' or order.status == 'confirmed' %}
+                                            <form method="POST" action="{% url 'cancel_order' order.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this order?');">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
-                                            </form> #}
+                                            </form>
+                                        {% elif order.status == 'delivered' %}
+                                            <a href="{% url 'vendor_my_reviews' %}" class="btn btn-sm btn-outline-success">Review</a>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -97,7 +95,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
-                <p><strong>Supplier:</strong> <span id="modalSupplierName"></span></p> {# Changed from Vendor to Supplier #}
+                <p><strong>Supplier:</strong> <span id="modalSupplierName"></span></p>
                 <p><strong>Order Date:</strong> <span id="modalOrderDate"></span></p>
                 <p><strong>Delivery Option:</strong> <span id="modalDeliveryOption"></span></p>
                 <p><strong>Scheduled Time:</strong> <span id="modalScheduledTime"></span></p>
@@ -138,7 +136,7 @@
 
                 // Populate modal with order data
                 document.getElementById('modalOrderId').textContent = order.id;
-                document.getElementById('modalSupplierName').textContent = order.supplier_name; 
+                document.getElementById('modalSupplierName').textContent = order.supplier_name;
                 document.getElementById('modalOrderDate').textContent = new Date(order.order_date).toLocaleString();
                 document.getElementById('modalDeliveryOption').textContent = order.delivery_option_display;
                 document.getElementById('modalScheduledTime').textContent = order.scheduled_delivery_time ? new Date(order.scheduled_delivery_time).toLocaleString() : 'Instant';
@@ -171,6 +169,20 @@
                 alert('Failed to load order details. Please try again.');
             }
         });
+    });
+
+    // --- FIX FOR BACKDROP REMAINING ---
+    // Listen for the modal's hidden event to clean up the backdrop
+    const orderDetailsModalElement = document.getElementById('orderDetailsModal');
+    orderDetailsModalElement.addEventListener('hidden.bs.modal', function () {
+        // Find and remove the backdrop element
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+        // Also ensure the body class is reset
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
     });
 </script>
 {% endblock %}

@@ -37,6 +37,7 @@ urlpatterns = [
     path('vendor/browse/', views.browse_products_view, name='browse_products'),
     path('vendor/checkout/', views.checkout_view, name='checkout'),
     path('vendor/orders/', views.vendor_orders_view, name='vendor_orders'),
+    path('vendor/orders/cancel/<int:order_id>/', views.cancel_order_view, name='cancel_order'),
     path('vendor/loans/', views.vendor_loans_view, name='vendor_loans'),
     path('vendor/leftovers/', views.vendor_leftovers_view, name='vendor_leftovers'),
     path('vendor/leftovers/mark-sold/<int:listing_id>/', views.mark_leftover_as_sold_view, name='mark_leftover_as_sold'),

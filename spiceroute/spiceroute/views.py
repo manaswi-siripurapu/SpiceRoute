@@ -45,7 +45,7 @@ def register_view(request):
 
         try:
             # Create the custom User object
-            user = User.objects.create_user(username=phone_number, password=password, phone_number=phone_number, email=email)
+            user = User.objects.create_user(username=name, password=password, phone_number=phone_number, email=email)
             
             if user_type == 'vendor':
                 user.is_vendor = True
@@ -87,22 +87,31 @@ def register_view(request):
 # Login view
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
+        identifier = request.POST.get('username')  # Can be email or phone
         password = request.POST.get('password')
 
-        user = authenticate(request, username=username, password=password)
+        try:
+            # Try finding the user by email or phone number
+            user = User.objects.get(Q(email=identifier) | Q(phone_number=identifier))
+        except User.DoesNotExist:
+            user = None
 
         if user is not None:
-            login(request, user)
-            messages.success(request, f"Welcome, {user.username}!")
-            if user.is_vendor:
-                return redirect('vendor_dashboard')
-            elif user.is_supplier:
-                return redirect('supplier_dashboard')
+            user_auth = authenticate(request, username=user.username, password=password)
+            if user_auth is not None:
+                login(request, user_auth)
+                messages.success(request, f"Welcome, {user.username}!")
+                if user.is_vendor:
+                    return redirect('vendor_dashboard')
+                elif user.is_supplier:
+                    return redirect('supplier_dashboard')
+                else:
+                    return redirect('home')
             else:
-                return redirect('home')
+                messages.error(request, "Invalid password.")
         else:
-            messages.error(request, "Invalid username or password.")
+            messages.error(request, "User not found with given email or phone.")
+    
     return render(request, 'login.html')
 
 # Logout view
@@ -111,7 +120,7 @@ def logout_view(request):
     messages.info(request, "You have been logged out.")
     return redirect('home')
 
-# --- AI Suggestion Logic (Simulated) ---
+#  AI Suggestion Logic (Simulated) 
 def get_vendor_ai_suggestions(vendor_profile):
     suggestions = []
     
@@ -1279,3 +1288,39 @@ def supplier_profile_view(request):
         'vendor_reviews': vendor_reviews,
     }
     return render(request, 'supplier_profile.html', context)
+
+@login_required
+def cancel_order_view(request, order_id):
+    """
+    Allows a vendor to cancel a pending or confirmed order.
+    Reverses the stock deduction for cancelled items.
+    """
+    if not request.user.is_vendor:
+        messages.error(request, "You are not authorized to perform this action.")
+        return redirect('home')
+    
+    order = get_object_or_404(Order, id=order_id, vendor__user=request.user)
+
+    # Only allow cancellation if the order is still pending or confirmed
+    if order.status not in ['pending', 'confirmed']:
+        messages.warning(request, "This order cannot be cancelled as it is already being processed or delivered.")
+        return redirect('vendor_orders')
+
+    try:
+        with transaction.atomic():
+            # Update the order status to cancelled
+            order.status = 'cancelled'
+            order.save()
+
+            # Reverse the stock deduction
+            for order_item in order.items.all():
+                product = order_item.product
+                product.quantity_available += order_item.quantity
+                product.save()
+
+        messages.success(request, f"Order #{order.id} has been successfully cancelled.")
+        return redirect('vendor_orders')
+    
+    except Exception as e:
+        messages.error(request, f"An error occurred while trying to cancel the order: {e}")
+        return redirect('vendor_orders')

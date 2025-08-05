@@ -79,13 +79,25 @@
                         </p>
                         
                         <div class="mt-auto d-flex justify-content-between align-items-center">
+                            <div class="input-group" style="width: 120px;">
+                                <button class="btn btn-outline-secondary btn-sm minus-btn" type="button" data-product-id="{{ product.id }}">-</button>
+                                <input type="number" class="form-control form-control-sm text-center" value="1" min="1" max="{{ product.quantity_available }}" data-product-id="{{ product.id }}" style="width: 50px;">
+                                <button class="btn btn-outline-secondary btn-sm plus-btn" type="button" data-product-id="{{ product.id }}">+</button>
+                            </div>
                             <button class="btn btn-sm btn-primary add-to-cart-btn"
                                 data-product-id="{{ product.id }}"
                                 data-product-name="{{ product.name }}"
                                 data-product-price="{{ product.current_price_per_unit }}"
                                 data-product-unit="{{ product.unit_of_measure }}">
                                 Add to Cart
-                        </button>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success bargain-btn"
+                                data-bs-toggle="modal"
+                                data-bs-target="#bargainModal"
+                                data-supplier-name="{{ product.supplier.business_name }}"
+                                data-supplier-phone="{{ product.supplier.phone_number }}">
+                                Bargain
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -97,23 +109,22 @@
             </div>
         {% endif %}
     </div>
-</div>
-
-<!-- Bargain Modal -->
-<div class="modal fade" id="bargainModal" tabindex="-1" aria-labelledby="bargainModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content rounded-3 shadow">
-            <div class="modal-header bg-success text-white rounded-top-3">
-                <h5 class="modal-title" id="bargainModalLabel">Bargain with Supplier</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <p>You can contact <strong id="modalSupplierName"></strong> directly to discuss pricing for bulk orders or special requests.</p>
-                <p class="mb-0">Supplier Phone: <strong id="modalSupplierPhone"></strong></p>
-                <p class="text-muted mt-2"><small>SpiceRoute facilitates this connection but is not responsible for direct negotiations or transactions outside the platform.</small></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+    <!-- Bargain Modal -->
+    <div class="modal fade" id="bargainModal" tabindex="-1" aria-labelledby="bargainModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header bg-success text-white rounded-top-3">
+                    <h5 class="modal-title" id="bargainModalLabel">Bargain with Supplier</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p>You can contact <strong id="modalSupplierName"></strong> directly to discuss pricing for bulk orders or special requests.</p>
+                    <p class="mb-0">Supplier Phone: <strong id="modalSupplierPhone"></strong></p>
+                    <p class="text-muted mt-2"><small>SpiceRoute facilitates this connection but is not responsible for direct negotiations or transactions outside the platform.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -122,48 +133,88 @@
 <!-- Font Awesome for Icons -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js" integrity="sha512-kWU4+/eUjsuhzXNy3g3+RV0h0eOK3EwnOTdGZfU5CzZCBxQvX6kUhzvbkM1G/vZboYlTC9z0HFvY7vX1YmDy1Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
-document.querySelectorAll('.add-to-cart-btn').forEach(button => {
-    button.addEventListener('click', function () {
-        const productId = this.dataset.productId;
-        const productName = this.dataset.productName;
-        const productPrice = parseFloat(this.dataset.productPrice);
-        const productUnit = this.dataset.productUnit;
-        const quantity = 1;
-
-        let cart = JSON.parse(sessionStorage.getItem('spicerouteCart')) || [];
-
-        const existingIndex = cart.findIndex(item => item.id === productId);
-
-        if (existingIndex > -1) {
-            cart[existingIndex].quantity += quantity;
-        } else {
-            cart.push({
-                id: productId,
-                name: productName,
-                price: productPrice,
-                unit: productUnit,
-                quantity: quantity
+    document.addEventListener('DOMContentLoaded', function () {
+        // Plus button logic
+        document.querySelectorAll('.plus-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const productId = this.dataset.productId;
+                const input = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+                const maxValue = parseInt(input.max);
+                let currentValue = parseInt(input.value);
+                if (currentValue < maxValue) {
+                    input.value = currentValue + 1;
+                }
             });
+        });
+
+        // Minus button logic
+        document.querySelectorAll('.minus-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const productId = this.dataset.productId;
+                const input = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+                let currentValue = parseInt(input.value);
+                if (currentValue > 1) {
+                    input.value = currentValue - 1;
+                }
+            });
+        });
+
+        // Add to Cart logic
+        document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const productId = this.dataset.productId;
+                const productName = this.dataset.productName;
+                const productPrice = parseFloat(this.dataset.productPrice);
+                const productUnit = this.dataset.productUnit;
+                const quantityInput = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+                const quantity = parseInt(quantityInput.value);
+
+                let cart = JSON.parse(sessionStorage.getItem('spicerouteCart')) || [];
+
+                const existingIndex = cart.findIndex(item => item.id === productId);
+
+                if (existingIndex > -1) {
+                    cart[existingIndex].quantity += quantity;
+                } else {
+                    cart.push({
+                        id: productId,
+                        name: productName,
+                        price: productPrice,
+                        unit: productUnit,
+                        quantity: quantity
+                    });
+                }
+
+                sessionStorage.setItem('spicerouteCart', JSON.stringify(cart));
+                updateCartCount();
+                alert(`${productName} (${quantity} ${productUnit}) added to cart!`);
+            });
+        });
+
+        // Update cart count badge
+        function updateCartCount() {
+            let cart = JSON.parse(sessionStorage.getItem('spicerouteCart')) || [];
+            const cartCountElement = document.getElementById('cartCount');
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            if (cartCountElement) {
+                cartCountElement.textContent = totalItems;
+                cartCountElement.style.display = totalItems > 0 ? 'inline-block' : 'none';
+            }
         }
 
-        sessionStorage.setItem('spicerouteCart', JSON.stringify(cart));
         updateCartCount();
-        alert(`${productName} (${quantity} ${productUnit}) added to cart!`);
+
+        // Bargain button logic
+        document.querySelectorAll('.bargain-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const supplierName = this.dataset.supplierName;
+                const supplierPhone = this.dataset.supplierPhone;
+
+                document.getElementById('modalSupplierName').textContent = supplierName;
+                document.getElementById('modalSupplierPhone').textContent = supplierPhone;
+            });
+        });
     });
-});
-
-function updateCartCount() {
-    let cart = JSON.parse(sessionStorage.getItem('spicerouteCart')) || [];
-    const cartCountElement = document.getElementById('cartCount');
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    if (cartCountElement) {
-        cartCountElement.textContent = totalItems;
-        cartCountElement.style.display = totalItems > 0 ? 'inline-block' : 'none';
-    }
-}
-
-document.addEventListener('DOMContentLoaded', updateCartCount);
 </script>
 
 {% endblock %}
-

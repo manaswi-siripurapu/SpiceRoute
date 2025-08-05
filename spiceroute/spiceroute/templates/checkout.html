@@ -17,13 +17,21 @@
                 <div class="card-body p-0">
                     <ul class="list-group list-group-flush">
                         {% for item in cart_items %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">{{ item.product.name }}</h6>
-                                <small class="text-muted">{{ item.quantity }} {{ item.product.unit_of_measure }} @ ₹{{ item.product.current_price_per_unit }} / {{ item.product.unit_of_measure }}</small>
-                            </div>
-                            <span class="fw-bold">₹{{ item.subtotal }}</span>
-                        </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap" data-product-id="{{ item.product.id }}" data-product-price="{{ item.product.current_price_per_unit }}">
+                                <div class="me-auto">
+                                    <h6 class="mb-1">{{ item.product.name }}</h6>
+                                    <small class="text-muted">{{ item.product.unit_of_measure }} @ ₹{{ item.product.current_price_per_unit }} / {{ item.product.unit_of_measure }}</small>
+                                    <div class="input-group input-group-sm mt-2" style="width: 120px;">
+                                        <button class="btn btn-outline-secondary btn-sm minus-btn" type="button" data-product-id="{{ item.product.id }}">−</button>
+                                        <input type="number" class="form-control text-center quantity-input" value="{{ item.quantity }}" min="1" max="999" data-product-id="{{ item.product.id }}">
+                                        <button class="btn btn-outline-secondary btn-sm plus-btn" type="button" data-product-id="{{ item.product.id }}">+</button>
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-column align-items-end">
+                                    <span class="fw-bold subtotal-amount" data-product-id="{{ item.product.id }}">₹{{ item.subtotal }}</span>
+                                    <button class="btn btn-sm btn-outline-danger remove-btn mt-2" data-product-id="{{ item.product.id }}">Remove</button>
+                                </div>
+                            </li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -36,7 +44,7 @@
                 <div class="card-body">
                     <form id="checkoutForm" method="POST" action="{% url 'checkout' %}">
                         {% csrf_token %}
-                        <input type="hidden" name="cart_data" id="cartDataInput"> {# Hidden input for cart data #}
+                        <input type="hidden" name="cart_data" id="cartDataInput">
 
                         <div class="mb-3">
                             <label for="deliveryAddress" class="form-label">Delivery Address</label>
@@ -80,15 +88,15 @@
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between">
                             <span>Subtotal</span>
-                            <span>₹{{ total_amount }}</span>
+                            <span class="fw-bold" id="subtotalAmount">₹{{ total_amount }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between">
                             <span>Delivery Charge</span>
-                            <span>₹{{ delivery_charge }}</span>
+                            <span class="fw-bold" id="deliveryCharge">₹{{ delivery_charge }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between text-success fw-bold">
                             <span>Grand Total</span>
-                            <span>₹{{ grand_total }}</span>
+                            <span class="fw-bold" id="grandTotalAmount">₹{{ grand_total }}</span>
                         </li>
                     </ul>
                     <button type="submit" form="checkoutForm" class="btn btn-primary w-100 mt-3 rounded-pill">Place Order</button>
@@ -104,24 +112,144 @@
 </div>
 
 <script>
-    // --- Cart Data Transfer from sessionStorage to Hidden Input ---
+    // --- Cart Data Transfer from sessionStorage and dynamic updates ---
     document.addEventListener('DOMContentLoaded', function() {
-        const cart = JSON.parse(sessionStorage.getItem('spicerouteCart')) || [];
-        const cartDataInput = document.getElementById('cartDataInput');
+        // Find all cart items on the page
+        const cartItemsOnPage = document.querySelectorAll('.list-group-item[data-product-id]');
         
-        if (cartDataInput) {
-            cartDataInput.value = JSON.stringify(cart);
+        // --- Plus/Minus Buttons Logic ---
+        document.querySelectorAll('.minus-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pid = btn.dataset.productId;
+                const input = document.querySelector(`.quantity-input[data-product-id="${pid}"]`);
+                let val = parseInt(input.value);
+                if (val > 1) {
+                    input.value = val - 1;
+                    updateCartAndTotals();
+                }
+            });
+        });
+
+        document.querySelectorAll('.plus-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pid = btn.dataset.productId;
+                const input = document.querySelector(`.quantity-input[data-product-id="${pid}"]`);
+                let val = parseInt(input.value);
+                const max = parseInt(input.max);
+                if (val < max) { // Check against max quantity
+                    input.value = val + 1;
+                    updateCartAndTotals();
+                }
+            });
+        });
+
+        document.querySelectorAll('.quantity-input').forEach(input => {
+            input.addEventListener('change', () => {
+                let val = parseInt(input.value);
+                const max = parseInt(input.max);
+                if (val < 1 || isNaN(val)) {
+                    input.value = 1;
+                }
+                if (val > max) {
+                    input.value = max;
+                }
+                updateCartAndTotals();
+            });
+        });
+
+        // --- Remove Button Logic ---
+        document.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pid = btn.dataset.productId;
+                let cart = JSON.parse(sessionStorage.getItem('spicerouteCart')) || [];
+                
+                // Filter out the item to be removed
+                cart = cart.filter(item => item.id != pid);
+                
+                sessionStorage.setItem('spicerouteCart', JSON.stringify(cart));
+                
+                // Remove the item's row from the page
+                const itemToRemove = document.querySelector(`.list-group-item[data-product-id="${pid}"]`);
+                if (itemToRemove) {
+                    itemToRemove.remove();
+                }
+
+                updateCartAndTotals();
+
+                // If cart is empty, redirect or show message
+                if (cart.length === 0) {
+                    window.location.href = "{% url 'browse_products' %}?message=Your+cart+is+now+empty.";
+                }
+            });
+        });
+
+        // --- Main function to update cart data and totals ---
+        function updateCartAndTotals() {
+            let cart = [];
+            let totalAmount = 0;
+            const cartItemsContainer = document.querySelector('.list-group-flush');
+
+            // Iterate through each visible item on the page to build the new cart array
+            cartItemsContainer.querySelectorAll('.list-group-item').forEach(itemEl => {
+                const productId = itemEl.dataset.productId;
+                const price = parseFloat(itemEl.dataset.productPrice);
+                const quantityInput = itemEl.querySelector('.quantity-input');
+                const quantity = parseInt(quantityInput.value);
+                const subtotal = quantity * price;
+
+                // Update the subtotal display for the current item
+                const subtotalEl = itemEl.querySelector('.subtotal-amount');
+                subtotalEl.textContent = `₹${subtotal.toFixed(2)}`;
+
+                // Add to the new cart array
+                cart.push({
+                    id: productId,
+                    name: itemEl.querySelector('h6').textContent,
+                    price: price,
+                    unit: itemEl.querySelector('small').textContent.split('@')[0].trim(),
+                    quantity: quantity
+                });
+
+                totalAmount += subtotal;
+            });
+            
+            // Update sessionStorage and hidden form field
+            sessionStorage.setItem('spicerouteCart', JSON.stringify(cart));
+            document.getElementById('cartDataInput').value = JSON.stringify(cart);
+            
+            // Update summary totals
+            const deliveryCharge = parseFloat(document.getElementById('deliveryCharge').textContent.replace('₹', ''));
+            document.getElementById('subtotalAmount').textContent = `₹${totalAmount.toFixed(2)}`;
+            document.getElementById('grandTotalAmount').textContent = `₹${(totalAmount + deliveryCharge).toFixed(2)}`;
+            
+            // Update cart count in the navbar
+            updateCartCount();
+
+            // Hide the checkout form if cart is empty
+            if (cart.length === 0) {
+                 const checkoutSection = document.querySelector('.container.mt-4');
+                 if (checkoutSection) {
+                    checkoutSection.innerHTML = `
+                    <div class="alert alert-warning text-center" role="alert">
+                        Your cart is empty. Please <a href="{% url 'browse_products' %}" class="alert-link">browse products</a> to add items.
+                    </div>`;
+                 }
+            }
         }
 
-        // Optional: Clear cart from sessionStorage after it's loaded into the form
-        // This is a design choice. You might want to clear it only AFTER successful order.
-        // For now, we'll let the backend clear it after order creation.
-    });
+        // Helper function to update cart count in navbar
+        function updateCartCount() {
+            const cart = JSON.parse(sessionStorage.getItem('spicerouteCart')) || [];
+            const cartCountElement = document.getElementById('cartCount');
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            if (cartCountElement) {
+                cartCountElement.textContent = totalItems;
+                cartCountElement.style.display = totalItems > 0 ? 'inline-block' : 'none';
+            }
+        }
 
-    // Update cart count in navbar on checkout page load (if needed)
-    // This function is already in base.html script, but ensure it runs on this page too
-    // (it should if base.html script is loaded after DOMContentLoaded)
-    // You might want to move this into a global JS file or ensure base.html script runs after this page's content is loaded.
-    // For now, let's assume updateCartCount from base.html is sufficient.
+        // Run on page load
+        updateCartAndTotals();
+    });
 </script>
 {% endblock %}

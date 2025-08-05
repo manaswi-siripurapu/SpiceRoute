@@ -48,11 +48,12 @@ SPICEROUTE/
 
 
 2. **Create virtual environment**
-   python -m venv spice-route-venv
-   spice-route-venv\Scripts\activate   # Windows
+   python -m venv .spice-route-venv
+   .spice-route-venv\Scripts\activate   # Windows
 
 3. **Install dependencies**
    pip install -r requirements.txt
+   cd spiceroute
 
 4. **Run migrations**
    python manage.py makemigrations
